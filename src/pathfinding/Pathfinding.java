@@ -21,35 +21,13 @@ public class Pathfinding {
         ArrayList<Node> closed = new ArrayList<>();
 
         Node current = null;
-        while (!open.peek().equals(target)) {
+        while (!open.isEmpty() && !target.equals(open.peek())) {
             current = open.poll();
             closed.add(current);
 
-            //Add all of the neighbors to a list to iterate over
             ArrayList<Node> neighbors = new ArrayList<>();
-            if (current.getI() > 0 && nodes[current.getI() - 1][current.getJ()] != null) {
-                neighbors.add(nodes[current.getI() - 1][current.getJ()]); //left
-                if (current.getJ() > 0 && nodes[current.getI() - 1][current.getJ() - 1] != null) {
-                    neighbors.add(nodes[current.getI() - 1][current.getJ() - 1]); //top left corner
-                }
-                if (current.getJ() < nodes.length - 1 && nodes[current.getI() - 1][current.getJ() + 1] != null) {
-                    neighbors.add(nodes[current.getI() - 1][current.getJ() + 1]); //bottom left corner
-                }
-            }
-            if (current.getJ() > 0 && nodes[current.getI()][current.getJ() - 1] != null) {
-                neighbors.add(nodes[current.getI()][current.getJ() - 1]); //top
-            }
-            if (current.getI() < nodes.length - 1 && nodes[current.getI() + 1][current.getJ()] != null) {
-                neighbors.add(nodes[current.getI() + 1][current.getJ()]); //right
-                if (current.getJ() > 0 && nodes[current.getI() + 1][current.getJ() - 1] != null) {
-                    neighbors.add(nodes[current.getI() + 1][current.getJ() - 1]); //top right corner
-                }
-                if (current.getJ() < nodes.length - 1 && nodes[current.getI() + 1][current.getJ() + 1] != null) {
-                    neighbors.add(nodes[current.getI() + 1][current.getJ() + 1]); //bottom right corner
-                }
-            }
-            if (current.getJ() < nodes[0].length - 1 && nodes[current.getI()][current.getJ() + 1] != null) {
-                neighbors.add(nodes[current.getI()][current.getJ() + 1]); //bottom
+            if (current != null) {
+                neighbors = neighbors(nodes, current);
             }
 
             for (Node neighbor : neighbors) {
@@ -77,5 +55,35 @@ public class Pathfinding {
     // Distance squared
     public static double d2Heuristic(Node a, Node b) {
         return Math.pow(b.getI() - a.getI(), 2) + Math.pow(b.getJ() - a.getJ(), 2);
+    }
+
+    public static ArrayList<Node> neighbors(Node[][] nodes, Node current) {
+        //Add all of the neighbors to a list to iterate over
+        ArrayList<Node> neighbors = new ArrayList<>();
+        if (current.getI() > 0 && nodes[current.getI() - 1][current.getJ()].isTraversable()) {
+            neighbors.add(nodes[current.getI() - 1][current.getJ()]); //left
+            if (current.getJ() > 0 && nodes[current.getI() - 1][current.getJ() - 1].isTraversable()) {
+                neighbors.add(nodes[current.getI() - 1][current.getJ() - 1]); //top left corner
+            }
+            if (current.getJ() < nodes.length - 1 && nodes[current.getI() - 1][current.getJ() + 1].isTraversable()) {
+                neighbors.add(nodes[current.getI() - 1][current.getJ() + 1]); //bottom left corner
+            }
+        }
+        if (current.getJ() > 0 && nodes[current.getI()][current.getJ() - 1].isTraversable()) {
+            neighbors.add(nodes[current.getI()][current.getJ() - 1]); //top
+        }
+        if (current.getI() < nodes.length - 1 && nodes[current.getI() + 1][current.getJ()].isTraversable()) {
+            neighbors.add(nodes[current.getI() + 1][current.getJ()]); //right
+            if (current.getJ() > 0 && nodes[current.getI() + 1][current.getJ() - 1].isTraversable()) {
+                neighbors.add(nodes[current.getI() + 1][current.getJ() - 1]); //top right corner
+            }
+            if (current.getJ() < nodes.length - 1 && nodes[current.getI() + 1][current.getJ() + 1].isTraversable()) {
+                neighbors.add(nodes[current.getI() + 1][current.getJ() + 1]); //bottom right corner
+            }
+        }
+        if (current.getJ() < nodes[0].length - 1 && nodes[current.getI()][current.getJ() + 1].isTraversable()) {
+            neighbors.add(nodes[current.getI()][current.getJ() + 1]); //bottom
+        }
+        return neighbors;
     }
 }

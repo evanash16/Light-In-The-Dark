@@ -94,7 +94,6 @@ public class Player extends Polygon {
 	}
 	
 	public boolean intersects(Polygon p) {
-		
 		for (int i = 0; i < p.npoints; i++) {
 			for (int j = 0; j < this.npoints; j++) {
 				if (Math.sqrt(Math.pow(this.xpoints[j] - p.xpoints[i], 2) + Math.pow(this.ypoints[j] - p.ypoints[i], 2)) < radius) {

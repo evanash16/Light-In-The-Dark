@@ -3,15 +3,8 @@ package graphics;
 import pathfinding.Node;
 import pathfinding.Pathfinding;
 
-import java.awt.BasicStroke;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Point;
-import java.awt.Polygon;
-import java.awt.Toolkit;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -19,14 +12,11 @@ import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
-import javax.swing.JFrame;
-import javax.swing.Timer;
-
 public class GUI extends JFrame implements ActionListener, KeyListener {
 
 	private static Toolkit tk = Toolkit.getDefaultToolkit();
 	public static Dimension screensize = new Dimension(tk.getScreenResolution() * 7, tk.getScreenResolution() * 7);
-	private static int gridWidth = 25;
+	private static int gridWidth = 10;
 
 	private Timer updateTimer;
 	private Node[][] nodes;
@@ -70,21 +60,25 @@ public class GUI extends JFrame implements ActionListener, KeyListener {
 	
 	public void reset() {
 
-		obs = generateObstacles(20);
-		nodes = new Node[getWidth() / gridWidth][getHeight() / gridWidth];
+		obs = generateObstacles(10);
+		nodes = new Node[getWidth() / gridWidth + 1][getHeight() / gridWidth + 1];
 
 		for (int i = 0; i < nodes.length; i++) {
 			for (int j = 0; j < nodes[i].length; j++) {
 				boolean contains = false;
 				for (Polygon poly : obs) {
-					if (poly.contains(i * gridWidth, j * gridWidth)) {
+				    Rectangle bounds = poly.getBounds();
+				    bounds.grow(gridWidth, gridWidth);
+					if (bounds.contains(i * gridWidth, j * gridWidth)) {
 						contains = true;
 						break;
 					}
 				}
 				if (!contains) {
 					nodes[i][j] = new Node(i, j, gridWidth);
-				}
+				} else {
+                    nodes[i][j] = new Node(i, j, gridWidth, false);
+                }
 			}
 		}
 		
@@ -135,7 +129,17 @@ public class GUI extends JFrame implements ActionListener, KeyListener {
 		
 		BufferedImage buffer = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
 		Graphics g2 = buffer.getGraphics();
-		
+
+//        for (int i = 0; i < nodes.length; i++) {
+//            for (int j = 0; j < nodes[i].length; j++) {
+//                g2.setColor(Color.RED);
+//                if (nodes[i][j].isTraversable()) {
+//                    g2.setColor(Color.GREEN);
+//                }
+//                g2.fillOval(nodes[i][j].getX() - 2, nodes[i][j].getY() - 2, 4, 4);
+//            }
+//        }
+
 		if (showAll || player.vision) {showAll(g2);}
 		
 		if (!dead) {
@@ -173,28 +177,33 @@ public class GUI extends JFrame implements ActionListener, KeyListener {
 					}
 				}
 
-				Node closestToEnemy = nodes[(int) (enemy.x / gridWidth)][(int) (enemy.y / gridWidth)];
-				Node closestToPlayer = nodes[(int) (player.x / gridWidth)][(int) (player.y / gridWidth)];
-				if (closestToEnemy != null && closestToPlayer != null) {
-					ArrayList<Node> path = Pathfinding.aStar(nodes, closestToEnemy, closestToPlayer);
-					for(Node node: path) {
-						g2.drawOval(node.getX() - 5, node.getY() - 5, 10, 10);
-					}
+				Node closestToEnemy = nodes[(int) Math.min(Math.round(enemy.x / (double) gridWidth), nodes.length - 1)][(int) Math.min(Math.round(enemy.y / (double) gridWidth), nodes[0].length - 1)];
+				Node closestToPlayer = nodes[(int) Math.min(Math.round(player.x / (double) gridWidth), nodes.length - 1)][(int) Math.min(Math.round(player.y / (double) gridWidth), nodes[0].length - 1)];
 
-					double deltaX, deltaY;
-					if(path.size() > 1) {
-						deltaX = path.get(1).getX() - enemy.x;
-						deltaY = path.get(1).getY() - enemy.y;
-					} else {
-						deltaX = player.x - enemy.x;
-						deltaY = player.y - enemy.y;
-					}
+				ArrayList<Node> path = Pathfinding.aStar(nodes, closestToEnemy, closestToPlayer);
 
-					if (Math.abs(deltaX) <= 1) {deltaX = 0;}
-					if (Math.abs(deltaY) <= 1) {deltaY = 0;}
+                if(!path.isEmpty()) {
+                    for (Node node: path) {
+                        if (node != null) {
+                            g2.setColor(Color.BLUE);
+                            g2.fillOval(node.getX() - 2, node.getY() - 2, 4, 4);
+                        }
+                    }
+                }
 
-					enemy.move(Math.signum(deltaX), Math.signum(deltaY));
-				}
+                double deltaX, deltaY;
+                if(!path.isEmpty() && path.size() > 1 && path.get(1) != null) {
+                    deltaX = path.get(1).getX() - enemy.x;
+                    deltaY = path.get(1).getY() - enemy.y;
+                } else {
+                    deltaX = player.x - enemy.x;
+                    deltaY = player.y - enemy.y;
+                }
+
+                if (Math.abs(deltaX) <= 1) {deltaX = 0;}
+                if (Math.abs(deltaY) <= 1) {deltaY = 0;}
+
+                enemy.move(Math.signum(deltaX), Math.signum(deltaY));
 
 				boolean colliding = false;
 				for (Polygon p: obs) {
@@ -232,40 +241,30 @@ public class GUI extends JFrame implements ActionListener, KeyListener {
 			}
 			
 		} else {
-			
-			showAll(g2);
-			player.draw(g2);
-			g2.setColor(new Color(150, 0, 0));
-			int y = ticks * 8;
-			int startY = 0;
-			
-			for (int i = 0; i < getWidth(); i++) {
-				startY = (int) (y + (getHeight() / 50) * Math.sin((double) (i + 10 * ticks) / (getHeight() / 25)));
-				g2.fillRect(i, getHeight() - startY, 1, startY);
-			}
-			
-			g2.setColor(Color.BLACK);
-			g2.setFont(new Font(null, Font.ITALIC, getHeight() / (int) (map(Math.random(), 0, 1, 18, 20))));
-			int width = g2.getFontMetrics().stringWidth("You died!");
-			g2.drawString("You died!", (getWidth() - width) / 2, getHeight() - y + getHeight() / 2);
-			
-			if (startY > getHeight()) {
-				dead = false;
-				reset();
-			}
-			
-			ticks++;
-		}
 
-		if (System.currentTimeMillis() % 200 > 195) {
-			
-			double timePerPaint = System.currentTimeMillis() - startTime;
-			framesPerSecond = (int) (1000 / timePerPaint);
-		}
-		String time = Integer.toString(framesPerSecond);
-		g2.setColor(Color.WHITE);
-		g2.setFont(new Font(null, Font.PLAIN, getHeight() / 75));
-		g2.drawString(time, 5, getHeight() - 5);
+            showAll(g2);
+            player.draw(g2);
+            g2.setColor(new Color(150, 0, 0));
+            int y = ticks * 8;
+            int startY = 0;
+
+            for (int i = 0; i < getWidth(); i++) {
+                startY = (int) (y + (getHeight() / 50) * Math.sin((double) (i + 10 * ticks) / (getHeight() / 25)));
+                g2.fillRect(i, getHeight() - startY, 1, startY);
+            }
+
+            g2.setColor(Color.BLACK);
+            g2.setFont(new Font(null, Font.ITALIC, getHeight() / (int) (map(Math.random(), 0, 1, 18, 20))));
+            int width = g2.getFontMetrics().stringWidth("You died!");
+            g2.drawString("You died!", (getWidth() - width) / 2, getHeight() - y + getHeight() / 2);
+
+            if (startY > getHeight()) {
+                dead = false;
+                reset();
+            }
+
+            ticks++;
+        }
 		
 		g.drawImage(buffer, 0, 0, null);
 	
@@ -293,7 +292,7 @@ public class GUI extends JFrame implements ActionListener, KeyListener {
 	public ArrayList<Polygon> generateObstacles(int numObstacles) {
 		
 		ArrayList<Polygon> obs = new ArrayList<>();
-		
+
 		for (int i = 0; i < numObstacles; i++) {
 			
 			int sideCount = 3 + (int) (Math.random() * 3);
