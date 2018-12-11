@@ -8,6 +8,10 @@ public class Pathfinding {
 
     public static ArrayList<Node> aStar(Node[][] nodes, Node start, Node target) {
 
+        if (!(target.isTraversable() && start.isTraversable())) {
+            return new ArrayList<>();
+        }
+
         HashMap<Node, Node> parents = new HashMap<>();
         HashMap<Node, Double> gCost = new HashMap<>();
 

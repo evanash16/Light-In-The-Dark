@@ -16,20 +16,20 @@ public class GUI extends JFrame implements ActionListener, KeyListener {
 
 	private static Toolkit tk = Toolkit.getDefaultToolkit();
 	public static Dimension screensize = new Dimension(tk.getScreenResolution() * 7, tk.getScreenResolution() * 7);
-	private static int gridWidth = 10;
+	private static int gridWidth = 25;
 
 	private Timer updateTimer;
 	private Node[][] nodes;
-	private ArrayList<Polygon> obs;
+	private ArrayList<Obstacle> obs;
 	private ArrayList<Item> items = new ArrayList<>();
 	
 	private Player player, enemy;
 	private Point off, spawnPoint = new Point(screensize.width / 2, screensize.height / 2);
 
 	private boolean[] keys = new boolean[] {false, false, false, false, false}; //left, right, up, down, ping
-	private int ticks = 0, framesPerSecond = 0;
+	private int ticks = 0;
 	private double radius = 0;
-	private boolean showAll = true, dead = false;
+	private boolean showAll = false, dead = false;
 	
 	public static void main(String[] args) {
 		new GUI();
@@ -66,10 +66,8 @@ public class GUI extends JFrame implements ActionListener, KeyListener {
 		for (int i = 0; i < nodes.length; i++) {
 			for (int j = 0; j < nodes[i].length; j++) {
 				boolean contains = false;
-				for (Polygon poly : obs) {
-				    Rectangle bounds = poly.getBounds();
-				    bounds.grow(gridWidth, gridWidth);
-					if (bounds.contains(i * gridWidth, j * gridWidth)) {
+				for (Obstacle obstacle : obs) {
+					if (obstacle.offset(gridWidth / 2).contains(i * gridWidth, j * gridWidth)) {
 						contains = true;
 						break;
 					}
@@ -105,16 +103,16 @@ public class GUI extends JFrame implements ActionListener, KeyListener {
 		keys = new boolean[]{false, false, false, false, false};
 	}
 	
-	public Point getPoint(ArrayList<Polygon> polys) {
+	public Point getPoint(ArrayList<Obstacle> obs) {
 		
 		boolean contains = true;
-		Point p = new Point((int) (Math.random() * getWidth()), (int) (Math.random() * getHeight()));
+		Point p = new Point((int) (Math.random() * getWidth()) , (int) (Math.random() * getHeight()));
 		while (contains) {
-			for (int j = 0; j < polys.size(); j++) {
-				if (polys.get(j).contains(p)) {
+			for (int j = 0; j < obs.size(); j++) {
+				if (obs.get(j).contains(p)) {
 					p = new Point((int) (Math.random() * getWidth()), (int) (Math.random() * getHeight()));
 				}
-				else if (j == polys.size() - 1) {
+				else if (j == obs.size() - 1) {
 					contains = false;
 				}
 			}		
@@ -124,8 +122,6 @@ public class GUI extends JFrame implements ActionListener, KeyListener {
 	}
 	
 	public void paint(Graphics g) {
-		
-		double startTime = System.currentTimeMillis();
 		
 		BufferedImage buffer = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_RGB);
 		Graphics g2 = buffer.getGraphics();
@@ -182,14 +178,14 @@ public class GUI extends JFrame implements ActionListener, KeyListener {
 
 				ArrayList<Node> path = Pathfinding.aStar(nodes, closestToEnemy, closestToPlayer);
 
-                if(!path.isEmpty()) {
-                    for (Node node: path) {
-                        if (node != null) {
-                            g2.setColor(Color.BLUE);
-                            g2.fillOval(node.getX() - 2, node.getY() - 2, 4, 4);
-                        }
-                    }
-                }
+//                if(!path.isEmpty()) {
+//                    for (Node node: path) {
+//                        if (node != null) {
+//                            g2.setColor(Color.BLUE);
+//                            g2.fillOval(node.getX() - 2, node.getY() - 2, 4, 4);
+//                        }
+//                    }
+//                }
 
                 double deltaX, deltaY;
                 if(!path.isEmpty() && path.size() > 1 && path.get(1) != null) {
@@ -289,9 +285,9 @@ public class GUI extends JFrame implements ActionListener, KeyListener {
 		return finMinVal + ((val - minVal) / (maxVal - minVal)) * (finMaxVal - finMinVal);
 	}
 	
-	public ArrayList<Polygon> generateObstacles(int numObstacles) {
+	public ArrayList<Obstacle> generateObstacles(int numObstacles) {
 		
-		ArrayList<Polygon> obs = new ArrayList<>();
+		ArrayList<Obstacle> obs = new ArrayList<>();
 
 		for (int i = 0; i < numObstacles; i++) {
 			
@@ -322,7 +318,7 @@ public class GUI extends JFrame implements ActionListener, KeyListener {
 				yPoints[j] = off.y + (int) (radius * Math.sin(a));
 			}
 			
-			obs.add(new Polygon(xPoints, yPoints, sideCount));
+			obs.add(new Obstacle(xPoints, yPoints, sideCount));
 		}
 		
 		return obs;
